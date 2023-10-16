@@ -47,10 +47,24 @@ function inquireCommand(command) {
         .prompt(question)
         .then((response) => {
             let table = response.table.toLowerCase();
-            console.log(response);
-            db.execute(qm.query(command, table), (err, result) => {
-                console.log(result);
-            });
+            if(command === 'View') {
+                db.execute(qm.query(command, table), (err, result) => {
+                    console.log(result);
+                });
+            }
+            else {
+                let { query, questions } = qm.query(command, table);
+
+                inquirer
+                    .prompt(questions)
+                    .then((response) => {
+                        console.log(query);
+                        console.log(response);
+                        // db.execute(query, fields, (err, result) => {
+                        //     console.log(result);
+                        // });
+                    });
+            }
         });
 }
 
