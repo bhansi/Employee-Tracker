@@ -13,6 +13,8 @@ const db = mysql.createConnection(
     console.info('Successfully connected to business_db database.\n')
 );
 
+const qm = new QueryMaker();
+
 function inquireCommand(command) {
     let message = `${command.split(' ')[0]} ${command.split(' ')[1].toLowerCase()}`;
     command = command.split(' ')[0];
@@ -44,9 +46,11 @@ function inquireCommand(command) {
     inquirer
         .prompt(question)
         .then((response) => {
-            let { table } = response;
+            let table = response.table.toLowerCase();
             console.log(response);
-            db.execute()
+            db.execute(qm.query(command, table), (err, result) => {
+                console.log(result);
+            });
         });
 }
 
@@ -62,7 +66,7 @@ function inquire() {
     const question = [
         {
             type: 'list',
-            name: 'command_type',
+            name: 'command',
             message: 'Which action would you like to perform?',
             choices: commands
         }
@@ -72,7 +76,7 @@ function inquire() {
         .prompt(question)
         .then((response) => {
             let { command } = response;
-            commands === 'Quit' ? process.exit() : inquireCommand(command);
+            command === 'Quit' ? process.exit() : inquireCommand(command);
         });
 }
 
