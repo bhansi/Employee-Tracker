@@ -62,22 +62,23 @@ function inquireCommand(command) {
         .then((response) => {
             let table = response.table.toLowerCase();
             if(command === 'View') {
-                db.execute(qm.query(command, table), (err, result) => {
+                db.execute(qm.query(command, table)).then((result) => {
                     console.log(result);
                 });
             }
             else {
-                let { query, questions } = qm.query(command, table);
+                let { query, questions, fields } = qm.query(command, table);
 
                 inquirer
                     .prompt(questions)
                     .then((response) => {
-                        console.log(query);
-                        console.log(Object.keys(response).length);
                         console.log(`${query}${'?'.repeat(Object.keys(response).length)});`);
-                        // db.execute(query, fields, (err, result) => {
-                        //     console.log(result);
-                        // });
+                        console.log(fields);
+                        let params = [];
+                        fields.forEach((field) => params.push(response[field]));
+                        console.log(params);
+                        query += '?'.repeat(Object.keys(response).length) + ');'
+                        db.execute(query, params).then((result) => console.log(result));
                     });
             }
         });
