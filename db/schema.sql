@@ -4,13 +4,13 @@ USE business_db;
 
 CREATE TABLE department(
     id INT AUTO_INCREMENT,
-    name UNIQUE VARCHAR(30) NOT NULL,
+    name VARCHAR(30) NOT NULL UNIQUE,
     PRIMARY KEY (id)
 );
 
 CREATE TABLE role(
     id INT AUTO_INCREMENT,
-    title UNIQUE VARCHAR(30) NOT NULL,
+    title VARCHAR(30) NOT NULL UNIQUE,
     salary DECIMAL NOT NULL,
     department_id INT,
     PRIMARY KEY (id),

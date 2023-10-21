@@ -26,7 +26,7 @@ async function getData() {
     await db.query('SELECT * FROM department;').then((result) => departments = result[0]);
     await db.query('SELECT * FROM role;').then((result) => roles = result[0]);
     await db.query('SELECT * FROM employee;').then((result) => employees = result[0]);
-    console.log('departments', employees);
+    console.log('employees', employees);
 }
 
 function getDepartmentId(name) {
@@ -66,22 +66,28 @@ function inquireCommand(command) {
     let message = `${command.split(' ')[0]} ${command.split(' ')[1].toLowerCase()}`;
     command = command.split(' ')[0];
 
-    switch(command) {
-        case 'View':
-        case 'Update':
-        case 'Delete':
-            message += ' from:';
-            break;
-        case 'Add':
-            message += ' to:';
-            break;
-    }
-
-    const tables = [
+    let tables = [
         'Department',
         'Role',
         'Employee'
     ];
+
+    switch(command) {
+        case 'View':
+            message += ' from:';
+            break;
+        case 'Update':
+        case 'Delete':
+            message += ' from:';
+            if(!roles.length) { tables.pop(); }
+            if(!departments.length) { tables.pop(); }
+            break;
+        case 'Add':
+            message += ' to:';
+            if(!roles.length) { tables.pop(); }
+            if(!departments.length) { tables.pop(); }
+            break;
+    }
 
     let question = {
         type: 'list',
