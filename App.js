@@ -10,6 +10,8 @@ let employees;
 let db;
 let qm;
 
+let command_finished = false;
+
 async function dbConnect() {
     db = await mysql.createConnection(
         {
@@ -63,7 +65,7 @@ function nameToId(fields, response) {
     }
 }
 
-function inquireCommand(command) {
+async function inquireCommand(command) {
     let message = `${command.split(' ')[0]} ${command.split(' ')[1].toLowerCase()}`;
     command = command.split(' ')[0];
 
@@ -97,31 +99,32 @@ function inquireCommand(command) {
         choices: tables
     }
 
-    inquirer
+    await inquirer
         .prompt(question)
-        .then((response) => {
+        .then(async (response) => {
             let table = response.table.toLowerCase();
             if(command === 'View') {
-                db.execute(qm.query(command, table)).then((result) => {
+                await db.execute(qm.query(command, table)).then((result) => {
                     console.log(result);
                 });
             }
             else {
                 let { query, questions, fields } = qm.query(command, table);
 
-                inquirer
+                await inquirer
                     .prompt(questions)
-                    .then((response) => {
+                    .then(async (response) => {
                         nameToId(fields, response);
                         fields = fields.map((field) => response[field]);
-                        console.log(fields);
-                        db.execute(query, fields).then((result) => console.log(result));
+                        await db.execute(query, fields).then((result) => console.log(result));
+                        await getData();
+                        qm = new QueryMaker(departments, roles, employees);
                     });
             }
         });
 }
 
-function inquire() {
+async function inquire() {
     const commands = [
         'View Records',
         'Add Record',
@@ -139,11 +142,11 @@ function inquire() {
         }
     ];
 
-    inquirer
+    await inquirer
         .prompt(question)
-        .then((response) => {
+        .then(async (response) => {
             let { command } = response;
-            command === 'Quit' ? process.exit() : inquireCommand(command);
+            command === 'Quit' ? process.exit() : await inquireCommand(command);
         });
 }
 
@@ -151,7 +154,9 @@ async function init() {
     await dbConnect();
     await getData();
     qm = new QueryMaker(departments, roles, employees);
-    inquire();
+    while(true) {
+        await inquire();
+    }
 }
 
 init();
