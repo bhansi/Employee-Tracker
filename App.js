@@ -8,6 +8,7 @@ let roles;
 let employees;
 
 let db;
+let qm;
 
 async function dbConnect() {
     db = await mysql.createConnection(
@@ -25,9 +26,41 @@ async function getData() {
     await db.query('SELECT * FROM department;').then((result) => departments = result[0]);
     await db.query('SELECT * FROM role;').then((result) => roles = result[0]);
     await db.query('SELECT * FROM employee;').then((result) => employees = result[0]);
+    console.log('departments', employees);
 }
 
-const qm = new QueryMaker();
+function getDepartmentId(name) {
+    for(let department of departments) {
+        if(department.name === name)
+            return department.id;
+    }
+}
+
+function getRoleId(name) {
+    for(let role of roles) {
+        if(role.name === name)
+            return role.id;
+    }
+}
+
+function getEmployeeId(name) {
+    for(let employee of employees) {
+        if(`${employee.first_name} ${employee.last_name}` === name)
+            return employee.id;
+    }
+}
+
+function nameToId(fields, response) {
+    if(fields.includes('department_id')) {
+        response['department_id'] = getDepartmentId(response['department_id']);
+    }
+    if(fields.includes('role_id')) {
+        response['role_id'] = getRoleId(response['role_id']);
+    }
+    if(fields.includes('employee_id')) {
+        response['employee_id'] = getEmployeeId(response['employee_id']);
+    }
+}
 
 function inquireCommand(command) {
     let message = `${command.split(' ')[0]} ${command.split(' ')[1].toLowerCase()}`;
@@ -72,13 +105,9 @@ function inquireCommand(command) {
                 inquirer
                     .prompt(questions)
                     .then((response) => {
-                        console.log(`${query}${'?'.repeat(Object.keys(response).length)});`);
-                        console.log(fields);
-                        let params = [];
-                        fields.forEach((field) => params.push(response[field]));
-                        console.log(params);
-                        query += '?'.repeat(Object.keys(response).length) + ');'
-                        db.execute(query, params).then((result) => console.log(result));
+                        nameToId(fields, response);
+                        fields = fields.map((field) => response[field]);
+                        db.execute(query, fields).then((result) => console.log(result));
                     });
             }
         });
@@ -113,6 +142,7 @@ function inquire() {
 async function init() {
     await dbConnect();
     await getData();
+    qm = new QueryMaker(departments, roles, employees);
     inquire();
 }
 
