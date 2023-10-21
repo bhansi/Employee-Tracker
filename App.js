@@ -36,9 +36,9 @@ function getDepartmentId(name) {
     }
 }
 
-function getRoleId(name) {
+function getRoleId(title) {
     for(let role of roles) {
-        if(role.name === name)
+        if(role.title === title)
             return role.id;
     }
 }
@@ -48,6 +48,7 @@ function getEmployeeId(name) {
         if(`${employee.first_name} ${employee.last_name}` === name)
             return employee.id;
     }
+    return null;
 }
 
 function nameToId(fields, response) {
@@ -57,8 +58,8 @@ function nameToId(fields, response) {
     if(fields.includes('role_id')) {
         response['role_id'] = getRoleId(response['role_id']);
     }
-    if(fields.includes('employee_id')) {
-        response['employee_id'] = getEmployeeId(response['employee_id']);
+    if(fields.includes('manager_id')) {
+        response['manager_id'] = getEmployeeId(response['manager_id']);
     }
 }
 
@@ -113,6 +114,7 @@ function inquireCommand(command) {
                     .then((response) => {
                         nameToId(fields, response);
                         fields = fields.map((field) => response[field]);
+                        console.log(fields);
                         db.execute(query, fields).then((result) => console.log(result));
                     });
             }
