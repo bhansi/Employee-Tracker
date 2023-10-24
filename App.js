@@ -1,6 +1,6 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2/promise');
-const QueryMaker = require('./lib/query.js')
+const QueryMaker = require('./lib/QueryMaker.js')
 require('dotenv').config();
 
 let departments;
@@ -28,7 +28,6 @@ async function getData() {
     await db.query('SELECT * FROM department;').then((result) => departments = result[0]);
     await db.query('SELECT * FROM role;').then((result) => roles = result[0]);
     await db.query('SELECT * FROM employee;').then((result) => employees = result[0]);
-    console.log('employees', employees);
 }
 
 function getDepartmentId(name) {
@@ -124,6 +123,56 @@ async function inquireCommand(command) {
         });
 }
 
+async function viewRecords() {
+    const choices = [
+        'View all departments',
+        'View all roles',
+        'View all employees',
+        'View roles by department',
+        'View employees by role',
+        'View employees by manager'
+    ];
+
+    let question = {
+        type: 'list',
+        name: 'view',
+        message: 'Please select a view:',
+        choices: choices
+    };
+
+    await inquirer
+        .prompt(question)
+        .then(async (response) => {
+            let { view } = response;
+            let query;
+            switch(view) {
+                case 'View all departments':
+                    query = qm.viewAll('department');
+                    break;
+                case 'View all roles':
+                    query = qm.viewAll('role');
+                    break;
+                case 'View all employees':
+                    query = qm.viewAll('employee');
+                    break;
+                case 'View roles by department':
+                    query = qm.viewBy('role', 'department_id');
+                    break;
+                case 'View employees by role':
+                    query = qm.viewBy('employee', 'role_id');
+                    break;
+                case 'View employees by manager':
+                    query = qm.viewBy('employee', 'manager_id');
+                    break;
+            }
+            console.log(query);
+            await db.execute(query).then((result) => {
+                console.log(result);
+                console.log(qm.displayTable(result));
+            });
+        })
+}
+
 async function inquire() {
     const commands = [
         'View Records',
@@ -146,7 +195,9 @@ async function inquire() {
         .prompt(question)
         .then(async (response) => {
             let { command } = response;
-            command === 'Quit' ? process.exit() : await inquireCommand(command);
+            // command === 'Quit' ? process.exit() : await inquireCommand(command);
+            if(command === 'View Records')
+                await viewRecords();
         });
 }
 
