@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2/promise');
-const QueryMaker = require('./lib/QueryMaker.js')
+const QueryMaker = require('./lib/QueryMaker.js');
+const Table = require('./lib/Table.js');
 require('dotenv').config();
 
 let departments;
@@ -168,7 +169,9 @@ async function viewRecords() {
             console.log(query);
             await db.execute(query).then((result) => {
                 console.log(result);
-                console.log(qm.displayTable(result));
+                let table = new Table();
+                table.createTable(result);
+                table.printTable();
             });
         })
 }
