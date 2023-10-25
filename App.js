@@ -166,9 +166,7 @@ async function viewRecords() {
                     query = qm.viewBy('employee', 'manager_id');
                     break;
             }
-            console.log(query);
             await db.execute(query).then((result) => {
-                console.log(result);
                 let table = new Table();
                 table.createTable(result);
                 table.printTable();
