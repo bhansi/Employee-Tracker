@@ -207,6 +207,37 @@ async function addRecord() {
                             });
                         });
                     break;
+                case 'Add role':
+                    await db.query('SELECT * FROM department;').then(async (result) => {
+                        if(result[0].length === 0) {
+                            console.info('\nPlease add a department before adding roles.\n');
+                            return;
+                        }
+
+                        let department_ids = [];
+                        let department_names = [];
+                        result[0].forEach((department) => {
+                            department_ids.push(department.id);
+                            department_names.push(department.name);
+                        });
+
+                        let { query, questions } = qm.addRole(department_names);
+
+                        await inquirer
+                            .prompt(questions)
+                            .then(async (response) => {
+                                let fields = [
+                                    response.title,
+                                    response.salary,
+                                    department_ids[department_names.indexOf(response.department_name)]
+                                ];
+
+                                await db.execute(query, fields).then((result) => {
+                                    console.log(result);
+                                });
+                            });
+                    });
+                    break;
             }
         });
 }
