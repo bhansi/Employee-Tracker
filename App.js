@@ -134,7 +134,7 @@ async function viewRecords() {
         'View employees by manager'
     ];
 
-    let question = {
+    const question = {
         type: 'list',
         name: 'view',
         message: 'Please select a view:',
@@ -146,6 +146,7 @@ async function viewRecords() {
         .then(async (response) => {
             let { view } = response;
             let query;
+
             switch(view) {
                 case 'View all departments':
                     query = qm.viewDepartments();
@@ -166,12 +167,48 @@ async function viewRecords() {
                     query = qm.viewBy('employee', 'manager_id');
                     break;
             }
+
             await db.execute(query).then((result) => {
                 let table = new Table();
                 table.createTable(result);
                 table.printTable();
             });
         })
+}
+
+async function addRecord() {
+    const choices = [
+        'Add department',
+        'Add role',
+        'Add employee'
+    ];
+
+    const question = {
+        type: 'list',
+        name: 'command',
+        message: 'What would you like to add:',
+        choices: choices
+    };
+
+    await inquirer
+        .prompt(question)
+        .then(async (response) => {
+            let { command } = response;
+
+            switch(command) {
+                case 'Add department':
+                    let { query, question } = qm.addDepartment();
+
+                    await inquirer
+                        .prompt(question)
+                        .then(async (response) => {
+                            await db.execute(query, [ response.name ]).then((result) => {
+                                console.log(result);
+                            });
+                        });
+                    break;
+            }
+        });
 }
 
 async function inquire() {
@@ -197,8 +234,14 @@ async function inquire() {
         .then(async (response) => {
             let { command } = response;
             // command === 'Quit' ? process.exit() : await inquireCommand(command);
-            if(command === 'View Records')
-                await viewRecords();
+            switch(command) {
+                case 'View Records':
+                    await viewRecords();
+                    break;
+                case 'Add Record':
+                    await addRecord();
+                    break;
+            }
         });
 }
 
