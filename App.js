@@ -148,13 +148,13 @@ async function viewRecords() {
             let query;
             switch(view) {
                 case 'View all departments':
-                    query = qm.viewAll('department');
+                    query = qm.viewDepartments();
                     break;
                 case 'View all roles':
-                    query = qm.viewAll('role');
+                    query = qm.viewRoles();
                     break;
                 case 'View all employees':
-                    query = qm.viewAll('employee');
+                    query = qm.viewEmployees();
                     break;
                 case 'View roles by department':
                     query = qm.viewBy('role', 'department_id');
