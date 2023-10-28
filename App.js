@@ -302,7 +302,7 @@ async function addRecord() {
 
 async function updateRecord() {
     await db
-        .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee;')
+        .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee ORDER BY name;')
         .then(async (result) => {
             if(result[0].length === 0) {
                 console.info('\nSorry, there are no employees available to update.\n');
