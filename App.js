@@ -144,10 +144,9 @@ async function viewRecords() {
     await inquirer
         .prompt(question)
         .then(async (response) => {
-            let { view } = response;
             let query;
 
-            switch(view) {
+            switch(response.view) {
                 case 'View all departments':
                     query = qm.viewDepartments();
                     break;
@@ -189,16 +188,14 @@ async function addRecord() {
     const question = {
         type: 'list',
         name: 'command',
-        message: 'What would you like to add:',
+        message: 'What would you like to add?',
         choices: choices
     };
 
     await inquirer
         .prompt(question)
         .then(async (response) => {
-            let { command } = response;
-
-            switch(command) {
+            switch(response.command) {
                 case 'Add department':
                     let { question, query } = qm.addDepartment();
 
@@ -303,6 +300,88 @@ async function addRecord() {
         });
 }
 
+async function updateRecord() {
+    await db
+        .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee;')
+        .then(async (result) => {
+            if(result[0].length === 0) {
+                console.info('\nSorry, there are no employees available to update.\n');
+                return;
+            }
+
+            let employee_ids = [];
+            let employee_names = [];
+            result[0].forEach((employee) => {
+                employee_ids.push(employee.id);
+                employee_names.push(employee.name);
+            });
+
+            const choices = [
+                'Update role',
+                'Update manager'
+            ];
+
+            const questions = [
+                {
+                    type: 'list',
+                    name: 'employee_name',
+                    message: 'Please choose which employee you wish to update:',
+                    choices: employee_names
+                },
+                {
+                    type: 'list',
+                    name: 'command',
+                    message: 'What would you like to update?',
+                    choices: choices
+                }
+            ];
+
+            await inquirer
+                .prompt(questions)
+                .then(async (response) => {
+                    let { employee_name, command } = response;
+                    let employee_id = employee_ids[employee_names.indexOf(employee_name)];
+
+                    switch(command) {
+                        case 'Update role':
+                            await db
+                                .query('SELECT id, title FROM role;')
+                                .then(async (result) => {
+                                    let role_ids = [];
+                                    let role_titles = [];
+                                    result[0].forEach((role) => {
+                                        role_ids.push(role.id);
+                                        role_titles.push(role.title);
+                                    });
+
+                                    let question = {
+                                        type: 'list',
+                                        name: 'role_title',
+                                        message: `Please select the updated role for ${employee_name}:`,
+                                        choices: role_titles
+                                    };
+
+                                    await inquirer
+                                        .prompt(question)
+                                        .then(async (response) => {
+                                            let role_id = role_ids[role_titles.indexOf(response.role_title)];
+
+                                            await db
+                                                .query(qm.updateEmployee('role_id', role_id, employee_id))
+                                                .then((result) => {
+                                                    console.log(result);
+                                                })
+                                                .catch((err) => console.error(err));
+                                        });
+                                })
+                                .catch((err) => console.error(err));
+                            break;
+                    }
+                });
+        })
+        .catch((err) => console.error(err));
+}
+
 async function inquire() {
     const commands = [
         'View Records',
@@ -332,6 +411,9 @@ async function inquire() {
                     break;
                 case 'Add Record':
                     await addRecord();
+                    break;
+                case 'Update Record':
+                    await updateRecord();
                     break;
             }
         });
