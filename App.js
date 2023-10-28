@@ -376,6 +376,32 @@ async function updateRecord() {
                                 })
                                 .catch((err) => console.error(err));
                             break;
+                        case 'Update manager':
+                            employee_ids = employee_ids.filter((id) => id !== employee_id);
+                            employee_names = employee_names.filter((name) => name !== employee_name);
+                            employee_ids.splice(0, 0, null);
+                            employee_names.splice(0, 0, 'No manager');
+
+                            let question = {
+                                type: 'list',
+                                name: 'manager_name',
+                                message: `Please select the updated manager for ${employee_name}:`,
+                                choices: employee_names
+                            };
+
+                            await inquirer
+                                .prompt(question)
+                                .then(async (response) => {
+                                    let manager_id = employee_ids[employee_names.indexOf(response.manager_name)];
+
+                                    await db
+                                        .query(qm.updateEmployee('manager_id', manager_id, employee_id))
+                                        .then((result) => {
+                                            console.log(result)
+                                        })
+                                        .catch((err) => console.error(err));
+                                });
+                            break;
                     }
                 });
         })
