@@ -168,11 +168,14 @@ async function viewRecords() {
                     break;
             }
 
-            await db.execute(query).then((result) => {
-                let table = new Table();
-                table.createTable(result);
-                table.printTable();
-            });
+            await db
+                .execute(query)
+                .then((result) => {
+                    let table = new Table();
+                    table.createTable(result);
+                    table.printTable();
+                })
+                .catch((err) => console.error(err));
         })
 }
 
@@ -202,82 +205,99 @@ async function addRecord() {
                     await inquirer
                         .prompt(question)
                         .then(async (response) => {
-                            await db.execute(query, [ response.name ]).then((result) => {
-                                console.log(result);
-                            });
+                            await db
+                                .execute(query, [ response.name ])
+                                .then((result) => {
+                                    console.log(result);
+                                })
+                                .catch((err) => console.error(err));
                         });
                     break;
                 case 'Add role':
-                    await db.query('SELECT * FROM department;').then(async (result) => {
-                        if(result[0].length === 0) {
-                            console.info('\nPlease add a department before adding roles.\n');
-                            return;
-                        }
+                    await db
+                        .query('SELECT * FROM department;')
+                        .then(async (result) => {
+                            if(result[0].length === 0) {
+                                console.info('\nPlease add a department before adding roles.\n');
+                                return;
+                            }
 
-                        let department_ids = [];
-                        let department_names = [];
-                        result[0].forEach((department) => {
-                            department_ids.push(department.id);
-                            department_names.push(department.name);
-                        });
-
-                        let { questions, query } = qm.addRole(department_names);
-
-                        await inquirer
-                            .prompt(questions)
-                            .then(async (response) => {
-                                let fields = [
-                                    response.title,
-                                    response.salary,
-                                    department_ids[department_names.indexOf(response.department_name)]
-                                ];
-
-                                await db.execute(query, fields).then((result) => {
-                                    console.log(result);
-                                });
-                            });
-                    });
-                    break;
-                case 'Add employee':
-                    await db.query('SELECT id, title FROM role;').then(async (result) => {
-                        if(result[0].length === 0) {
-                            console.info('\nPlease add a role before adding employees.\n');
-                            return;
-                        }
-
-                        let role_ids = [];
-                        let role_titles = [];
-                        result[0].forEach((role) => {
-                            role_ids.push(role.id);
-                            role_titles.push(role.title);
-                        });
-
-                        await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee;').then(async (result) => {
-                            let employee_ids = [ null ];
-                            let employee_names = [ 'No manager' ];
-                            result[0].forEach((employee) => {
-                                employee_ids.push(employee.id);
-                                employee_names.push(employee.name);
+                            let department_ids = [];
+                            let department_names = [];
+                            result[0].forEach((department) => {
+                                department_ids.push(department.id);
+                                department_names.push(department.name);
                             });
 
-                            let { questions, query } = qm.addEmployee(role_titles, employee_names);
+                            let { questions, query } = qm.addRole(department_names);
 
                             await inquirer
                                 .prompt(questions)
                                 .then(async (response) => {
                                     let fields = [
-                                        response.first_name,
-                                        response.last_name,
-                                        role_ids[role_titles.indexOf(response.role_title)],
-                                        employee_ids[employee_names.indexOf(response.manager_name)]
+                                        response.title,
+                                        response.salary,
+                                        department_ids[department_names.indexOf(response.department_name)]
                                     ];
 
-                                    await db.execute(query, fields).then((result) => {
-                                        console.log(result);
-                                    });
+                                    await db
+                                        .execute(query, fields)
+                                        .then((result) => {
+                                            console.log(result);
+                                        })
+                                        .catch((err) => console.error(err));
                                 });
-                        });
-                    });
+                        })
+                        .catch((err) => console.error(err));
+                    break;
+                case 'Add employee':
+                    await db
+                        .query('SELECT id, title FROM role;')
+                        .then(async (result) => {
+                            if(result[0].length === 0) {
+                                console.info('\nPlease add a role before adding employees.\n');
+                                return;
+                            }
+
+                            let role_ids = [];
+                            let role_titles = [];
+                            result[0].forEach((role) => {
+                                role_ids.push(role.id);
+                                role_titles.push(role.title);
+                            });
+
+                            await db
+                                .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee;')
+                                .then(async (result) => {
+                                    let employee_ids = [ null ];
+                                    let employee_names = [ 'No manager' ];
+                                    result[0].forEach((employee) => {
+                                        employee_ids.push(employee.id);
+                                        employee_names.push(employee.name);
+                                    });
+
+                                    let { questions, query } = qm.addEmployee(role_titles, employee_names);
+
+                                    await inquirer
+                                        .prompt(questions)
+                                        .then(async (response) => {
+                                            let fields = [
+                                                response.first_name,
+                                                response.last_name,
+                                                role_ids[role_titles.indexOf(response.role_title)],
+                                                employee_ids[employee_names.indexOf(response.manager_name)]
+                                            ];
+
+                                            await db.execute(query, fields)
+                                            .then((result) => {
+                                                console.log(result);
+                                            })
+                                            .catch((err) => console.error(err));
+                                        });
+                                })
+                                .catch((err) => console.error(err));
+                        })
+                        .catch((err) => console.error(err));
                     break;
             }
         });
