@@ -463,6 +463,43 @@ async function deleteRecord() {
                         })
                         .catch((err) => console.error(err));
                     break;
+                case 'Delete a role':
+                    await db
+                        .query('SELECT id, title FROM role;')
+                        .then(async (result) => {
+                            if(result[0].length === 0) {
+                                console.info('\nThere are no roles available to delete.\n');
+                                return;
+                            }
+
+                            let role_ids = [];
+                            let role_titles = [];
+                            result[0].forEach((role) => {
+                                role_ids.push(role.id);
+                                role_titles.push(role.title);
+                            });
+
+                            let question = {
+                                type: 'list',
+                                name: 'role_title',
+                                message: 'Please select which role you wish to delete:',
+                                choices: role_titles
+                            };
+
+                            await inquirer
+                                .prompt(question)
+                                .then(async (response) => {
+                                    let id = role_ids[role_titles.indexOf(response.role_title)];
+                                    await db
+                                        .query(qm.deleteRecord('role', id))
+                                        .then((result) => {
+                                            console.log(result);
+                                        })
+                                        .catch((err) => console.error(err));
+                                });
+                        })
+                        .catch((err) => console.error(err));
+                    break;
             }
         });
 }
