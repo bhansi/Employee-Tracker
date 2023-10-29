@@ -125,7 +125,7 @@ async function inquireCommand(command) {
 }
 
 async function viewRecords() {
-    const choices = [
+    let choices = [
         'View all departments',
         'View all roles',
         'View all employees',
@@ -134,7 +134,7 @@ async function viewRecords() {
         'View employees by manager'
     ];
 
-    const question = {
+    let question = {
         type: 'list',
         name: 'view',
         message: 'Please select a view:',
@@ -179,13 +179,13 @@ async function viewRecords() {
 }
 
 async function addRecord() {
-    const choices = [
+    let choices = [
         'Add department',
         'Add role',
         'Add employee'
     ];
 
-    const question = {
+    let question = {
         type: 'list',
         name: 'command',
         message: 'What would you like to add?',
@@ -316,12 +316,12 @@ async function updateRecord() {
                 employee_names.push(employee.name);
             });
 
-            const choices = [
+            let choices = [
                 'Update role',
                 'Update manager'
             ];
 
-            const questions = [
+            let questions = [
                 {
                     type: 'list',
                     name: 'employee_name',
@@ -408,6 +408,65 @@ async function updateRecord() {
         .catch((err) => console.error(err));
 }
 
+async function deleteRecord() {
+    let choices = [
+        'Delete a department',
+        'Delete a role',
+        'Delete an employee'
+    ];
+
+    let question = {
+        type: 'list',
+        name: 'command',
+        message: 'From which table would you like to delete a record?',
+        choices: choices
+    };
+
+    await inquirer
+        .prompt(question)
+        .then(async (response) => {
+            switch(response.command) {
+                case 'Delete a department':
+                    await db
+                        .query('SELECT id, name FROM department;')
+                        .then(async (result) => {
+                            if(result[0].length === 0) {
+                                console.info('\nThere are no departments available to delete.\n');
+                                return;
+                            }
+
+                            let department_ids = [];
+                            let department_names = [];
+                            result[0].forEach((department) => {
+                                department_ids.push(department.id);
+                                department_names.push(department.name);
+                            });
+
+                            let question = {
+                                type: 'list',
+                                name: 'department_name',
+                                message: 'Please select which department you wish to delete:',
+                                choices: department_names
+                            };
+
+                            await inquirer
+                                .prompt(question)
+                                .then(async (response) => {
+                                    let id = department_ids[department_names.indexOf(response.department_name)];
+                                    await db
+                                        .query(qm.deleteRecord('department', id))
+                                        .then((result) => {
+                                            console.log(result);
+                                        })
+                                        .catch((err) => console.error(err));
+                                });
+                        })
+                        .catch((err) => console.error(err));
+                    break;
+            }
+        });
+}
+
 async function inquire() {
     const commands = [
         'View Records',
@@ -441,12 +500,20 @@ async function inquire() {
                 case 'Update Record':
                     await updateRecord();
                     break;
+                case 'Delete Record':
+                    await deleteRecord();
+                    break;
+                case 'Quit':
+                    console.info('\nHave a wonderful day!')
+                    process.exit(0);
             }
         });
 }
 
 async function init() {
     await dbConnect();
+    console.info('\nWelcome to the Employee Manager application!');
+    console.info('Please follow the prompts to perform actions to manage your business.\n');
     await getData();
     qm = new QueryMaker(departments, roles, employees);
     while(true) {
