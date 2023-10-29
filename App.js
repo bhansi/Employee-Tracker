@@ -489,11 +489,51 @@ async function deleteRecord() {
                             await inquirer
                                 .prompt(question)
                                 .then(async (response) => {
-                                    let id = role_ids[role_titles.indexOf(response.role_title)];
+                                    let role_id = role_ids[role_titles.indexOf(response.role_title)];
+                                    let { role_title } = response;
                                     await db
-                                        .query(qm.deleteRecord('role', id))
-                                        .then((result) => {
-                                            console.log(result);
+                                        .query(`SELECT ID, CONCAT(first_name, " ", last_name) AS Name FROM employee WHERE role_id = ${role_id};`)
+                                        .then(async (result) => {
+                                            if(result[0].length === 0) {
+                                                await db
+                                                    .query(qm.deleteRecord('role', role_id))
+                                                    .then(() => {
+                                                        console.info('\nSuccessfully deleted record.');
+                                                    })
+                                                    .catch((err) => console.error(err));
+                                            }
+                                            else {
+                                                console.info(`\nThe following employees are in the ${role_title} role you wish to delete.`);
+                                                let table = new Table();
+                                                table.createTable(result);
+                                                table.printTable();
+
+                                                let question = {
+                                                    type: 'confirm',
+                                                    name: 'delete',
+                                                    message: `Do you wish to delete BOTH the ${role_title} role and its associated employees listed above?`
+                                                };
+
+                                                await inquirer
+                                                    .prompt(question)
+                                                    .then(async (response) => {
+                                                        if(response.delete) {
+                                                            await db
+                                                                .query(qm.deleteRecords('employee', 'role_id', role_id))
+                                                                .then(async () => {
+                                                                    await db
+                                                                        .query(qm.deleteRecords('role', 'id', role_id))
+                                                                        .then(() => {
+                                                                            console.info('\nSuccessfully delete records.\n');
+                                                                        })
+                                                                        .catch((err) => console.error(err));
+                                                                })
+                                                        }
+                                                        else {
+                                                            console.info('\nCancelled deletion command.\n');
+                                                        }
+                                                    });
+                                            }
                                         })
                                         .catch((err) => console.error(err));
                                 });
