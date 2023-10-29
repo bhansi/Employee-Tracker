@@ -500,6 +500,43 @@ async function deleteRecord() {
                         })
                         .catch((err) => console.error(err));
                     break;
+                case 'Delete an employee':
+                    await db
+                        .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee ORDER BY name;')
+                        .then(async (result) => {
+                            if(result[0].length === 0) {
+                                console.info('\nThere are no employees available to delete.\n');
+                                return;
+                            }
+
+                            let employee_ids = [];
+                            let employee_names =[];
+                            result[0].forEach((employee) => {
+                                employee_ids.push(employee.id);
+                                employee_names.push(employee.name);
+                            });
+
+                            let question = {
+                                type: 'list',
+                                name: 'employee_name',
+                                message: 'Please select which employee you wish to delete:',
+                                choices: employee_names
+                            };
+
+                            await inquirer
+                                .prompt(question)
+                                .then(async (response) => {
+                                    let id = employee_ids[employee_names.indexOf(response.employee_name)];
+                                    await db
+                                        .query(qm.deleteRecord('employee', id))
+                                        .then((result) => {
+                                            console.log(result);
+                                        })
+                                        .catch((err) => console.error(err));
+                                });
+                        })
+                        .catch((err) => console.error(err));
+                    break;
             }
         });
 }
