@@ -4,14 +4,8 @@ const QueryMaker = require('./lib/QueryMaker.js');
 const Table = require('./lib/Table.js');
 require('dotenv').config();
 
-let departments;
-let roles;
-let employees;
-
 let db;
 let qm;
-
-let command_finished = false;
 
 async function dbConnect() {
     db = await mysql.createConnection(

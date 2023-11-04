@@ -11,7 +11,7 @@ CREATE TABLE department(
 CREATE TABLE role(
     id INT AUTO_INCREMENT,
     title VARCHAR(30) NOT NULL UNIQUE,
-    salary DECIMAL NOT NULL,
+    salary DECIMAL(8, 2) NOT NULL,
     department_id INT,
     PRIMARY KEY (id),
     FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE
