@@ -27,14 +27,32 @@ function successMessage(command, plural) {
     console.info(`\nSuccessfully ${command} record${plural}.\n`);
 }
 
-async function viewRecords() {
+async function viewRecords(department_count, role_count, employee_count) {
     let choices = [
-        'View all departments',
-        'View all roles',
-        'View all employees',
-        'View roles by department',
-        'View employees by role',
-        'View employees by manager'
+        {
+            name: 'View all departments',
+            disabled: department_count === 0
+        },
+        {
+            name: 'View all roles',
+            disabled: role_count === 0
+        },
+        {
+            name: 'View all employees',
+            disabled: employee_count === 0
+        },
+        {
+            name: 'View roles by department',
+            disabled: role_count === 0
+        },
+        {
+            name: 'View employees by role',
+            disabled: employee_count === 0
+        },
+        {
+            name: 'View employees by manager',
+            disabled: employee_count === 0
+        }
     ];
 
     let question = {
@@ -81,11 +99,19 @@ async function viewRecords() {
         })
 }
 
-async function addRecord() {
+async function addRecord(department_count, role_count) {
     let choices = [
-        'Add department',
-        'Add role',
-        'Add employee'
+        {
+            name: 'Add department'
+        },
+        {
+            name: 'Add role',
+            disabled: department_count === 0
+        },
+        {
+            name: 'Add employee',
+            disabled: role_count === 0
+        }
     ];
 
     let question = {
@@ -115,11 +141,6 @@ async function addRecord() {
                     await db
                         .query('SELECT * FROM department;')
                         .then(async (result) => {
-                            if(result[0].length === 0) {
-                                console.info('\nPlease add a department before adding roles.\n');
-                                return;
-                            }
-
                             let department_ids = [];
                             let department_names = [];
                             result[0].forEach((department) => {
@@ -150,11 +171,6 @@ async function addRecord() {
                     await db
                         .query('SELECT id, title FROM role;')
                         .then(async (result) => {
-                            if(result[0].length === 0) {
-                                console.info('\nPlease add a role before adding employees.\n');
-                                return;
-                            }
-
                             let role_ids = [];
                             let role_titles = [];
                             result[0].forEach((role) => {
@@ -202,11 +218,6 @@ async function updateRecord() {
     await db
         .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee ORDER BY name;')
         .then(async (result) => {
-            if(result[0].length === 0) {
-                console.info('\nSorry, there are no employees available to update.\n');
-                return;
-            }
-
             let employee_ids = [];
             let employee_names = [];
             result[0].forEach((employee) => {
@@ -302,11 +313,20 @@ async function updateRecord() {
         .catch(catchError);
 }
 
-async function deleteRecord() {
+async function deleteRecord(department_count, role_count, employee_count) {
     let choices = [
-        'Delete a department',
-        'Delete a role',
-        'Delete an employee'
+        {
+            name: 'Delete a department',
+            disabled: department_count === 0
+        },
+        {
+            name: 'Delete a role',
+            disabled: role_count === 0
+        },
+        {
+            name: 'Delete an employee',
+            disabled: employee_count === 0
+        }
     ];
 
     let question = {
@@ -324,11 +344,6 @@ async function deleteRecord() {
                     await db
                         .query('SELECT id, name FROM department;')
                         .then(async (result) => {
-                            if(result[0].length === 0) {
-                                console.info('\nThere are no departments available to delete.\n');
-                                return;
-                            }
-
                             let department_ids = [];
                             let department_names = [];
                             result[0].forEach((department) => {
@@ -358,77 +373,78 @@ async function deleteRecord() {
                                                     .catch(catchError);
                                                 successMessage('deleted', '');
                                             }
+                                            else {
+                                                let role_ids = [];
+                                                result[0].forEach((role) => role_ids.push(role.ID));
 
-                                            let role_ids = [];
-                                            result[0].forEach((role) => role_ids.push(role.ID));
+                                                let query = 'SELECT ID, CONCAT(first_name, " ", last_name) AS Name FROM employee WHERE role_id = ';
+                                                let condition = `${role_ids[0]}`
+                                                for(let i = 1; i < role_ids.length; i++) {
+                                                    condition += ` OR role_id = ${role_ids[i]}`;
+                                                }
+                                                query += condition + ';';
 
-                                            let query = 'SELECT ID, CONCAT(first_name, " ", last_name) AS Name FROM employee WHERE role_id = ';
-                                            let condition = `${role_ids[0]}`
-                                            for(let i = 1; i < role_ids.length; i++) {
-                                                condition += ` OR role_id = ${role_ids[i]}`;
+                                                let role_table = new Table();
+                                                role_table.createTable(result);
+
+                                                await db
+                                                    .query(query)
+                                                    .then(async (result) => {
+                                                        if(result[0].length === 0) {
+                                                            console.info(`\nBelow are the roles associated with the ${department_name} department.`);
+                                                            role_table.printTable();
+
+                                                            let question = {
+                                                                type: 'confirm',
+                                                                name: 'delete',
+                                                                message: `Do you wish to delete BOTH the ${department_name} department and its associated roles above?`
+                                                            };
+
+                                                            await inquirer
+                                                                .prompt(question)
+                                                                .then(async (response) => {
+                                                                    if(response.delete) {
+                                                                        await db
+                                                                            .query(qm.deleteRecord('department', department_id))
+                                                                            .catch(catchError);
+                                                                        successMessage('deleted', 's');
+                                                                    }
+                                                                    else {
+                                                                        console.info('\nCancelled deletion command.\n');
+                                                                    }
+                                                                });
+                                                        }
+                                                        else {
+                                                            let employee_table = new Table();
+                                                            employee_table.createTable(result);
+
+                                                            console.info(`\nBelow are the roles and employees associated with the ${department_name} department.`);
+                                                            role_table.printTable();
+                                                            employee_table.printTable();
+
+                                                            let question = {
+                                                                type: 'confirm',
+                                                                name: 'delete',
+                                                                message: `Do you wish to delete BOTH the ${department_name} department and its associated roles and employees above?`
+                                                            };
+
+                                                            await inquirer
+                                                                .prompt(question)
+                                                                .then(async (response) => {
+                                                                    if(response.delete) {
+                                                                        await db
+                                                                            .query(qm.deleteRecord('department', department_id))
+                                                                            .catch(catchError);
+                                                                        successMessage('deleted', 's');
+                                                                    }
+                                                                    else {
+                                                                        console.info('\nCancelled deletion command.\n');
+                                                                    }
+                                                                });
+                                                        }
+                                                    })
+                                                    .catch(catchError)
                                             }
-                                            query += condition + ';';
-
-                                            let role_table = new Table();
-                                            role_table.createTable(result);
-
-                                            await db
-                                                .query(query)
-                                                .then(async (result) => {
-                                                    if(result[0].length === 0) {
-                                                        console.info(`\nBelow are the roles associated with the ${department_name} department.`);
-                                                        role_table.printTable();
-
-                                                        let question = {
-                                                            type: 'confirm',
-                                                            name: 'delete',
-                                                            message: `Do you wish to delete BOTH the ${department_name} department and its associated roles above?`
-                                                        };
-
-                                                        await inquirer
-                                                            .prompt(question)
-                                                            .then(async (response) => {
-                                                                if(response.delete) {
-                                                                    await db
-                                                                        .query(qm.deleteRecord('department', department_id))
-                                                                        .catch(catchError);
-                                                                    successMessage('deleted', 's');
-                                                                }
-                                                                else {
-                                                                    console.info('\nCancelled deletion command.\n');
-                                                                }
-                                                            });
-                                                    }
-                                                    else {
-                                                        let employee_table = new Table();
-                                                        employee_table.createTable(result);
-
-                                                        console.info(`\nBelow are the roles and employees associated with the ${department_name} department.`);
-                                                        role_table.printTable();
-                                                        employee_table.printTable();
-
-                                                        let question = {
-                                                            type: 'confirm',
-                                                            name: 'delete',
-                                                            message: `Do you wish to delete BOTH the ${department_name} department and its associated roles and employees above?`
-                                                        };
-
-                                                        await inquirer
-                                                            .prompt(question)
-                                                            .then(async (response) => {
-                                                                if(response.delete) {
-                                                                    await db
-                                                                        .query(qm.deleteRecord('department', department_id))
-                                                                        .catch(catchError);
-                                                                    successMessage('deleted', 's');
-                                                                }
-                                                                else {
-                                                                    console.info('\nCancelled deletion command.\n');
-                                                                }
-                                                            });
-                                                    }
-                                                })
-                                                .catch(catchError)
                                         })
                                         .catch(catchError);
                                 });
@@ -439,11 +455,6 @@ async function deleteRecord() {
                     await db
                         .query('SELECT id, title FROM role;')
                         .then(async (result) => {
-                            if(result[0].length === 0) {
-                                console.info('\nThere are no roles available to delete.\n');
-                                return;
-                            }
-
                             let role_ids = [];
                             let role_titles = [];
                             result[0].forEach((role) => {
@@ -508,11 +519,6 @@ async function deleteRecord() {
                     await db
                         .query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee ORDER BY name;')
                         .then(async (result) => {
-                            if(result[0].length === 0) {
-                                console.info('\nThere are no employees available to delete.\n');
-                                return;
-                            }
-
                             let employee_ids = [];
                             let employee_names = [];
                             result[0].forEach((employee) => {
@@ -544,12 +550,30 @@ async function deleteRecord() {
 }
 
 async function inquire() {
+    let { department_count } = (await db.query('SELECT COUNT(*) department_count FROM department;'))[0][0];
+    let { role_count } = (await db.query('SELECT COUNT(*) role_count FROM role;'))[0][0];
+    let { employee_count } = (await db.query('SELECT COUNT(*) employee_count FROM employee;'))[0][0];
+
+    console.log(department_count, role_count, employee_count);
     const commands = [
-        'View Records',
-        'Add Record',
-        'Update Record',
-        'Delete Record',
-        'Quit'
+        {
+            name: 'View Records',
+            disabled: department_count === 0
+        },
+        {
+            name: 'Add Record',
+        },
+        {
+            name: 'Update Record',
+            disabled: employee_count === 0
+        },
+        {
+            name: 'Delete Record',
+            disabled: department_count === 0
+        },
+        {
+            name: 'Quit'
+        }
     ];
 
     const question = [
@@ -567,16 +591,16 @@ async function inquire() {
             let { command } = response;
             switch(command) {
                 case 'View Records':
-                    await viewRecords();
+                    await viewRecords(department_count, role_count, employee_count);
                     break;
                 case 'Add Record':
-                    await addRecord();
+                    await addRecord(department_count, role_count);
                     break;
                 case 'Update Record':
-                    await updateRecord();
+                    await updateRecord(department_count, role_count, employee_count);
                     break;
                 case 'Delete Record':
-                    await deleteRecord();
+                    await deleteRecord(department_count, role_count, employee_count);
                     break;
                 case 'Quit':
                     console.info('\nHave a wonderful day!')
@@ -586,10 +610,11 @@ async function inquire() {
 }
 
 async function init() {
+    await dbConnect();
     console.info('\nWelcome to the Employee Tracker application!');
     console.info('Please follow the prompts to perform actions to manage your business.\n');
 
-    qm = new QueryMaker(departments, roles, employees);
+    qm = new QueryMaker();
 
     while(true) {
         await inquire();
