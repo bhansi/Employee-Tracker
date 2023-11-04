@@ -52,6 +52,10 @@ async function viewRecords(department_count, role_count, employee_count) {
         {
             name: 'View employees by manager',
             disabled: employee_count === 0
+        },
+        {
+            name: 'View the total utilized budget of a department',
+            disabled: department_count === 0
         }
     ];
 
@@ -68,6 +72,9 @@ async function viewRecords(department_count, role_count, employee_count) {
             let query;
             let result;
             let question;
+            let department_ids;
+            let department_names;
+            let department_id;
 
             switch(response.view) {
                 case 'View all departments':
@@ -80,8 +87,8 @@ async function viewRecords(department_count, role_count, employee_count) {
                     query = qm.viewEmployees('');
                     break;
                 case 'View roles by department':
-                    let department_ids = [];
-                    let department_names = [];
+                    department_ids = [];
+                    department_names = [];
                     result = (await db.query('SELECT department.id, department.name FROM department JOIN role WHERE role.department_id = department.id;').catch(catchError))[0];
                     result.forEach((department) => {
                         if(!department_names.includes(department.name)) {
@@ -98,7 +105,7 @@ async function viewRecords(department_count, role_count, employee_count) {
                     };
 
                     response = await inquirer.prompt(question);
-                    let department_id = department_ids[department_names.indexOf(response.department_name)];
+                    department_id = department_ids[department_names.indexOf(response.department_name)];
                     query = qm.viewRoles(`WHERE role.department_id = ${department_id}`);
                     break;
                 case 'View employees by role':
@@ -143,6 +150,27 @@ async function viewRecords(department_count, role_count, employee_count) {
                     let manager_id = employee_ids[employee_names.indexOf(response.manager_name)];
                     query = qm.viewEmployees(`WHERE employee.manager_id = ${manager_id}`)
                     break;
+                case 'View the total utilized budget of a department':
+                    department_ids = [];
+                    department_names = [];
+                    result = (await db.query('SELECT id, name FROM department;').catch(catchError))[0];
+                    result.forEach((department) => {
+                        department_ids.push(department.id);
+                        department_names.push(department.name);
+                    });
+
+                    question = {
+                        type: 'list',
+                        name: 'department_name',
+                        message: 'Please select the department for which you wish to view the total utilized budget:',
+                        choices: department_names
+                    }
+
+                    response = await inquirer.prompt(question);
+                    department_id = department_ids[department_names.indexOf(response.department_name)];
+
+                    // query = 'SELECT department.name AS Name, SUM(role.salary) AS "Total Utilized Budget" FROM department JOIN role ON department.id = role.department_id JOIN employee ON role.id = employee.role_id GROUP BY Name;'
+                    query = qm.viewBudget(department_id);
             }
 
             await db
