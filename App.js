@@ -128,6 +128,10 @@ async function inquireCommand(command) {
         });
 }
 
+function successMessage(command, plural) {
+    console.info(`\nSuccessfully ${command} record${plural}.\n`);
+}
+
 async function viewRecords() {
     let choices = [
         'View all departments',
@@ -465,10 +469,8 @@ async function deleteRecord() {
                                             if(result[0].length === 0) {
                                                 await db
                                                     .query(qm.deleteRecords('department', 'id', department_id))
-                                                    .then(() => {
-                                                        console.info('\nSuccessfully deleted record.\n');
-                                                    })
                                                     .catch(catchError);
+                                                successMessage('deleted', '');
                                             }
 
                                             let role_ids = [];
@@ -502,16 +504,9 @@ async function deleteRecord() {
                                                             .then(async (response) => {
                                                                 if(response.delete) {
                                                                     await db
-                                                                        .query(qm.deleteRecords('role', 'department_id', department_id))
-                                                                        .then(async () => {
-                                                                            await db
-                                                                                .query(qm.deleteRecords('department', 'id', department_id))
-                                                                                .then((result) => {
-                                                                                    console.log(result);
-                                                                                })
-                                                                                .catch(catchError)
-                                                                        })
+                                                                        .query(qm.deleteRecords('department', 'id', department_id))
                                                                         .catch(catchError);
+                                                                    successMessage('deleted', 's');
                                                                 }
                                                                 else {
                                                                     console.info('\nCancelled deletion command.\n');
@@ -537,21 +532,9 @@ async function deleteRecord() {
                                                             .then(async (response) => {
                                                                 if(response.delete) {
                                                                     await db
-                                                                        .query(qm.deleteRecords('employee', 'role_id', condition))
-                                                                        .then(async () => {
-                                                                            await db
-                                                                                .query(qm.deleteRecords('role', 'department_id', department_id))
-                                                                                .then(async () => {
-                                                                                    await db
-                                                                                        .query(qm.deleteRecords('department', 'id', department_id))
-                                                                                        .then((result) => {
-                                                                                            console.log(result);
-                                                                                        })
-                                                                                        .catch(catchError);
-                                                                                })
-                                                                                .catch(catchError);
-                                                                        })
+                                                                        .query(qm.deleteRecords('department', 'id', department_id))
                                                                         .catch(catchError);
+                                                                    successMessage('deleted', 's');
                                                                 }
                                                                 else {
                                                                     console.info('\nCancelled deletion command.\n');
@@ -653,10 +636,10 @@ async function deleteRecord() {
                             }
 
                             let employee_ids = [];
-                            let employee_names =[];
+                            let employee_names = [];
                             result[0].forEach((employee) => {
                                 employee_ids.push(employee.id);
-                                employee_names.push(employee.name);
+                                employee_names.push(`${employee.name} (${employee.id})`);
                             });
 
                             let question = {
