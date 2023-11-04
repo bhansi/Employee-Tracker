@@ -212,10 +212,8 @@ async function addRecord() {
                         .then(async (response) => {
                             await db
                                 .execute(query, [ response.name ])
-                                .then((result) => {
-                                    console.log(result);
-                                })
                                 .catch(catchError);
+                            successMessage('added', '');
                         });
                     break;
                 case 'Add role':
@@ -247,10 +245,8 @@ async function addRecord() {
 
                                     await db
                                         .execute(query, fields)
-                                        .then((result) => {
-                                            console.log(result);
-                                        })
                                         .catch(catchError);
+                                    successMessage('added', '');
                                 });
                         })
                         .catch(catchError);
@@ -278,7 +274,7 @@ async function addRecord() {
                                     let employee_names = [ 'No manager' ];
                                     result[0].forEach((employee) => {
                                         employee_ids.push(employee.id);
-                                        employee_names.push(employee.name);
+                                        employee_names.push(`${employee.name} (${employee.id})`);
                                     });
 
                                     let { questions, query } = qm.addEmployee(role_titles, employee_names);
@@ -293,11 +289,10 @@ async function addRecord() {
                                                 employee_ids[employee_names.indexOf(response.manager_name)]
                                             ];
 
-                                            await db.execute(query, fields)
-                                            .then((result) => {
-                                                console.log(result);
-                                            })
-                                            .catch(catchError);
+                                            await db
+                                                .execute(query, fields)
+                                                .catch(catchError);
+                                            successMessage('added', '');
                                         });
                                 })
                                 .catch(catchError);
@@ -321,7 +316,7 @@ async function updateRecord() {
             let employee_names = [];
             result[0].forEach((employee) => {
                 employee_ids.push(employee.id);
-                employee_names.push(employee.name);
+                employee_names.push(`${employee.name} (${employee.id})`);
             });
 
             let choices = [
@@ -339,7 +334,7 @@ async function updateRecord() {
                 {
                     type: 'list',
                     name: 'command',
-                    message: 'What would you like to update?',
+                    message: 'What would you like to update for this employee?',
                     choices: choices
                 }
             ];
@@ -376,10 +371,8 @@ async function updateRecord() {
 
                                             await db
                                                 .query(qm.updateEmployee('role_id', role_id, employee_id))
-                                                .then((result) => {
-                                                    console.log(result);
-                                                })
                                                 .catch(catchError);
+                                            successMessage('updated', '');
                                         });
                                 })
                                 .catch(catchError);
@@ -404,10 +397,8 @@ async function updateRecord() {
 
                                     await db
                                         .query(qm.updateEmployee('manager_id', manager_id, employee_id))
-                                        .then((result) => {
-                                            console.log(result)
-                                        })
                                         .catch(catchError);
+                                    successMessage('updated', '')
                                 });
                             break;
                     }
@@ -583,10 +574,8 @@ async function deleteRecord() {
                                             if(result[0].length === 0) {
                                                 await db
                                                     .query(qm.deleteRecord('role', role_id))
-                                                    .then(() => {
-                                                        console.info('\nSuccessfully deleted record.\n');
-                                                    })
                                                     .catch(catchError);
+                                                    successMessage('deleted', '');
                                             }
                                             else {
                                                 console.info(`\nThe following employees are in the ${role_title} role you wish to delete.`);
@@ -605,15 +594,9 @@ async function deleteRecord() {
                                                     .then(async (response) => {
                                                         if(response.delete) {
                                                             await db
-                                                                .query(qm.deleteRecords('employee', 'role_id', role_id))
-                                                                .then(async () => {
-                                                                    await db
-                                                                        .query(qm.deleteRecords('role', 'id', role_id))
-                                                                        .then(() => {
-                                                                            console.info('\nSuccessfully delete records.\n');
-                                                                        })
-                                                                        .catch(catchError);
-                                                                })
+                                                                .query(qm.deleteRecords('role', 'id', role_id))
+                                                                .catch(catchError);
+                                                            successMessage('deleted', 's');
                                                         }
                                                         else {
                                                             console.info('\nCancelled deletion command.\n');
@@ -652,13 +635,11 @@ async function deleteRecord() {
                             await inquirer
                                 .prompt(question)
                                 .then(async (response) => {
-                                    let id = employee_ids[employee_names.indexOf(response.employee_name)];
+                                    let employee_id = employee_ids[employee_names.indexOf(response.employee_name)];
                                     await db
-                                        .query(qm.deleteRecord('employee', id))
-                                        .then((result) => {
-                                            console.log(result);
-                                        })
+                                        .query(qm.deleteRecord('employee', employee_id))
                                         .catch(catchError);
+                                    successMessage('deleted', '');
                                 });
                         })
                         .catch(catchError);
