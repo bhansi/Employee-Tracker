@@ -82,10 +82,12 @@ async function viewRecords(department_count, role_count, employee_count) {
                 case 'View roles by department':
                     let department_ids = [];
                     let department_names = [];
-                    result = (await db.query('SELECT * FROM department JOIN role WHERE role.department_id = department.id;').catch(catchError))[0];
+                    result = (await db.query('SELECT department.id, department.name FROM department JOIN role WHERE role.department_id = department.id;').catch(catchError))[0];
                     result.forEach((department) => {
-                        department_ids.push(department.id);
-                        department_names.push(department.name);
+                        if(!department_names.includes(department.name)) {
+                            department_ids.push(department.id);
+                            department_names.push(department.name);
+                        }
                     });
 
                     question = {
@@ -97,12 +99,12 @@ async function viewRecords(department_count, role_count, employee_count) {
 
                     response = await inquirer.prompt(question);
                     let department_id = department_ids[department_names.indexOf(response.department_name)];
-                    query = qm.viewRoles(`WHERE department_id = ${department_id}`);
+                    query = qm.viewRoles(`WHERE role.department_id = ${department_id}`);
                     break;
                 case 'View employees by role':
                     let role_ids = [];
                     let role_titles = [];
-                    result = (await db.query('SELECT * FROM role JOIN employee ON role.id = employee.role_id;').catch(catchError))[0];
+                    result = (await db.query('SELECT role.id, role.title FROM role JOIN employee ON role.id = employee.role_id;').catch(catchError))[0];
                     result.forEach((role) => {
                         if(!role_titles.includes(role.title)) {
                             role_ids.push(role.id);
@@ -119,7 +121,7 @@ async function viewRecords(department_count, role_count, employee_count) {
 
                     response = await inquirer.prompt(question);
                     let role_id = role_ids[role_titles.indexOf(response.role_title)];
-                    query = qm.viewEmployees(`WHERE role_id = ${role_id}`)
+                    query = qm.viewEmployees(`WHERE employee.role_id = ${role_id}`)
                     break;
                 case 'View employees by manager':
                     let employee_ids = [];
@@ -139,7 +141,7 @@ async function viewRecords(department_count, role_count, employee_count) {
 
                     response = await inquirer.prompt(question);
                     let manager_id = employee_ids[employee_names.indexOf(response.manager_name)];
-                    query = qm.viewEmployees(`WHERE manager_id = ${manager_id}`)
+                    query = qm.viewEmployees(`WHERE employee.manager_id = ${manager_id}`)
                     break;
             }
 
