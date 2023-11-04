@@ -66,6 +66,8 @@ async function viewRecords(department_count, role_count, employee_count) {
         .prompt(question)
         .then(async (response) => {
             let query;
+            let result;
+            let question;
 
             switch(response.view) {
                 case 'View all departments':
@@ -80,26 +82,64 @@ async function viewRecords(department_count, role_count, employee_count) {
                 case 'View roles by department':
                     let department_ids = [];
                     let department_names = [];
-                    let result = (await db.query('SELECT * FROM department;').catch(catchError))[0];
-                    result.forEach((deparment) => {
-                        department_ids.push(deparment.id);
-                        department_names.push(deparment.name);
+                    result = (await db.query('SELECT * FROM department JOIN role WHERE role.department_id = department.id;').catch(catchError))[0];
+                    result.forEach((department) => {
+                        department_ids.push(department.id);
+                        department_names.push(department.name);
                     });
 
-                    let question = {
+                    question = {
                         type: 'list',
                         name: 'department_name',
-                        message: 'Please select which department\'s roles you wish to see:',
+                        message: 'Please select which department\'s roles you wish to view:',
                         choices: department_names
                     };
-                    let response = await inquirer.prompt(question);
-                    query = qm.viewRoles(`WHERE department_id = ${department_ids[department_names.indexOf(response.department_name)]}`);
+
+                    response = await inquirer.prompt(question);
+                    let department_id = department_ids[department_names.indexOf(response.department_name)];
+                    query = qm.viewRoles(`WHERE department_id = ${department_id}`);
                     break;
                 case 'View employees by role':
-                    query = qm.viewBy('employee', 'role_id');
+                    let role_ids = [];
+                    let role_titles = [];
+                    result = (await db.query('SELECT * FROM role JOIN employee ON role.id = employee.role_id;').catch(catchError))[0];
+                    result.forEach((role) => {
+                        if(!role_titles.includes(role.title)) {
+                            role_ids.push(role.id);
+                            role_titles.push(role.title);
+                        }
+                    });
+
+                    question = {
+                        type: 'list',
+                        name: 'role_title',
+                        message: 'Please select which role\'s employees you wish to view:',
+                        choices: role_titles
+                    }
+
+                    response = await inquirer.prompt(question);
+                    let role_id = role_ids[role_titles.indexOf(response.role_title)];
+                    query = qm.viewEmployees(`WHERE role_id = ${role_id}`)
                     break;
                 case 'View employees by manager':
-                    query = qm.viewBy('employee', 'manager_id');
+                    let employee_ids = [];
+                    let employee_names = [];
+                    result = (await db.query('SELECT managers.id, CONCAT(managers.first_name, " ", managers.last_name) AS name FROM employee AS managers WHERE (SELECT COUNT(employees.id) FROM employee AS employees WHERE employees.manager_id = managers.id) > 0;').catch(catchError))[0];
+                    result.forEach((employee) => {
+                        employee_ids.push(employee.id);
+                        employee_names.push(`${employee.name} (${employee.id})`);
+                    });
+
+                    question = {
+                        type: 'list',
+                        name: 'manager_name',
+                        message: 'Please select which manager\'s employees you wish to view:',
+                        choices: employee_names
+                    }
+
+                    response = await inquirer.prompt(question);
+                    let manager_id = employee_ids[employee_names.indexOf(response.manager_name)];
+                    query = qm.viewEmployees(`WHERE manager_id = ${manager_id}`)
                     break;
             }
 
@@ -569,7 +609,6 @@ async function inquire() {
     let { role_count } = (await db.query('SELECT COUNT(*) role_count FROM role;'))[0][0];
     let { employee_count } = (await db.query('SELECT COUNT(*) employee_count FROM employee;'))[0][0];
 
-    console.log(department_count, role_count, employee_count);
     const commands = [
         {
             name: 'View Records',
