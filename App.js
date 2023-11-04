@@ -23,105 +23,6 @@ function catchError(err) {
     console.error(err);
 }
 
-async function getData() {
-    await db.query('SELECT * FROM department;').then((result) => departments = result[0]);
-    await db.query('SELECT * FROM role;').then((result) => roles = result[0]);
-    await db.query('SELECT * FROM employee;').then((result) => employees = result[0]);
-}
-
-function getDepartmentId(name) {
-    for(let department of departments) {
-        if(department.name === name)
-            return department.id;
-    }
-}
-
-function getRoleId(title) {
-    for(let role of roles) {
-        if(role.title === title)
-            return role.id;
-    }
-}
-
-function getEmployeeId(name) {
-    for(let employee of employees) {
-        if(`${employee.first_name} ${employee.last_name}` === name)
-            return employee.id;
-    }
-    return null;
-}
-
-function nameToId(fields, response) {
-    if(fields.includes('department_id')) {
-        response['department_id'] = getDepartmentId(response['department_id']);
-    }
-    if(fields.includes('role_id')) {
-        response['role_id'] = getRoleId(response['role_id']);
-    }
-    if(fields.includes('manager_id')) {
-        response['manager_id'] = getEmployeeId(response['manager_id']);
-    }
-}
-
-async function inquireCommand(command) {
-    let message = `${command.split(' ')[0]} ${command.split(' ')[1].toLowerCase()}`;
-    command = command.split(' ')[0];
-
-    let tables = [
-        'Department',
-        'Role',
-        'Employee'
-    ];
-
-    switch(command) {
-        case 'View':
-            message += ' from:';
-            break;
-        case 'Update':
-        case 'Delete':
-            message += ' from:';
-            if(!roles.length) { tables.pop(); }
-            if(!departments.length) { tables.pop(); }
-            break;
-        case 'Add':
-            message += ' to:';
-            if(!roles.length) { tables.pop(); }
-            if(!departments.length) { tables.pop(); }
-            break;
-    }
-
-    let question = {
-        type: 'list',
-        name: 'table',
-        message: message,
-        choices: tables
-    }
-
-    await inquirer
-        .prompt(question)
-        .then(async (response) => {
-            let table = response.table.toLowerCase();
-            if(command === 'View') {
-                await db.execute(qm.query(command, table)).then((result) => {
-                    console.log(result);
-                });
-            }
-            else {
-                let { query, questions, fields } = qm.query(command, table);
-
-                await inquirer
-                    .prompt(questions)
-                    .then(async (response) => {
-                        nameToId(fields, response);
-                        fields = fields.map((field) => response[field]);
-                        await db.execute(query, fields).then((result) => console.log(result));
-                        await getData();
-                        qm = new QueryMaker(departments, roles, employees);
-                    });
-            }
-        });
-}
-
 function successMessage(command, plural) {
     console.info(`\nSuccessfully ${command} record${plural}.\n`);
 }
@@ -453,7 +354,7 @@ async function deleteRecord() {
                                         .then(async (result) => {
                                             if(result[0].length === 0) {
                                                 await db
-                                                    .query(qm.deleteRecords('department', 'id', department_id))
+                                                    .query(qm.deleteRecord('department', department_id))
                                                     .catch(catchError);
                                                 successMessage('deleted', '');
                                             }
@@ -489,7 +390,7 @@ async function deleteRecord() {
                                                             .then(async (response) => {
                                                                 if(response.delete) {
                                                                     await db
-                                                                        .query(qm.deleteRecords('department', 'id', department_id))
+                                                                        .query(qm.deleteRecord('department', department_id))
                                                                         .catch(catchError);
                                                                     successMessage('deleted', 's');
                                                                 }
@@ -517,7 +418,7 @@ async function deleteRecord() {
                                                             .then(async (response) => {
                                                                 if(response.delete) {
                                                                     await db
-                                                                        .query(qm.deleteRecords('department', 'id', department_id))
+                                                                        .query(qm.deleteRecord('department', department_id))
                                                                         .catch(catchError);
                                                                     successMessage('deleted', 's');
                                                                 }
@@ -588,7 +489,7 @@ async function deleteRecord() {
                                                     .then(async (response) => {
                                                         if(response.delete) {
                                                             await db
-                                                                .query(qm.deleteRecords('role', 'id', role_id))
+                                                                .query(qm.deleteRecord('role', role_id))
                                                                 .catch(catchError);
                                                             successMessage('deleted', 's');
                                                         }
@@ -664,7 +565,6 @@ async function inquire() {
         .prompt(question)
         .then(async (response) => {
             let { command } = response;
-            // command === 'Quit' ? process.exit() : await inquireCommand(command);
             switch(command) {
                 case 'View Records':
                     await viewRecords();
@@ -686,11 +586,11 @@ async function inquire() {
 }
 
 async function init() {
-    await dbConnect();
-    console.info('\nWelcome to the Employee Manager application!');
+    console.info('\nWelcome to the Employee Tracker application!');
     console.info('Please follow the prompts to perform actions to manage your business.\n');
-    await getData();
+
     qm = new QueryMaker(departments, roles, employees);
+
     while(true) {
         await inquire();
     }
