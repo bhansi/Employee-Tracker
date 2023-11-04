@@ -72,13 +72,28 @@ async function viewRecords(department_count, role_count, employee_count) {
                     query = qm.viewDepartments();
                     break;
                 case 'View all roles':
-                    query = qm.viewRoles();
+                    query = qm.viewRoles('');
                     break;
                 case 'View all employees':
-                    query = qm.viewEmployees();
+                    query = qm.viewEmployees('');
                     break;
                 case 'View roles by department':
-                    query = qm.viewBy('role', 'department_id');
+                    let department_ids = [];
+                    let department_names = [];
+                    let result = (await db.query('SELECT * FROM department;').catch(catchError))[0];
+                    result.forEach((deparment) => {
+                        department_ids.push(deparment.id);
+                        department_names.push(deparment.name);
+                    });
+
+                    let question = {
+                        type: 'list',
+                        name: 'department_name',
+                        message: 'Please select which department\'s roles you wish to see:',
+                        choices: department_names
+                    };
+                    let response = await inquirer.prompt(question);
+                    query = qm.viewRoles(`WHERE department_id = ${department_ids[department_names.indexOf(response.department_name)]}`);
                     break;
                 case 'View employees by role':
                     query = qm.viewBy('employee', 'role_id');
