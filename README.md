@@ -12,7 +12,7 @@ This is a CLI application designed for a business owner to view and manage their
 
 ## Installation
 
-This application uses the mysql database program, which can be installed here.<br><br>
+This application uses the mysql database program, which can be installed [here](https://dev.mysql.com/downloads/mysql/).<br><br>
 
 1. Clone the repository.<br>
 2. Run 'npm i' in the command line.<br>
@@ -25,7 +25,13 @@ This application uses the mysql database program, which can be installed here.<b
 
 ## Usage
 
-Once the application is installed and setup, the application can be started using the 'npm start' command in the command line. Once started, follow the command prompts in the application to view and manipulate the data as you please.
+Once the application is installed and setup, the application can be started using the 'npm start' command in the command line. Once started, follow the command prompts in the application to view and manipulate the data as you please. Below are some screenshots of the application in use.<br><br>
+
+![Landing Screen](./images/landing_screen.png)<br>
+
+![View Screen](./images/view_screen.png)<br>
+
+![Adding Screen](./images/adding_screen.png)
 
 ## Questions
 
