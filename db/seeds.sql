@@ -7,13 +7,13 @@ VALUES
 
 INSERT INTO role (title, salary, department_id)
 VALUES
-    ("CEO", 1000000, 1),
+    ("CEO", 500000, 1),
     ("Sales Manager", 100000, 2),
     ("Sales", 70000, 2),
-    ("Marketing Manager", 100000, 3),
-    ("Marketing", 70000, 3),
-    ("Legal Manager", 100000, 4),
-    ("Legal", 70000, 4);
+    ("Marketing Manager", 110000, 3),
+    ("Marketing", 85000, 3),
+    ("Legal Manager", 130000, 4),
+    ("Legal", 90000, 4);
 
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUES
