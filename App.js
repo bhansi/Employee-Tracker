@@ -89,7 +89,7 @@ async function viewRecords(department_count, role_count, employee_count) {
                 case 'View roles by department':
                     department_ids = [];
                     department_names = [];
-                    result = (await db.query('SELECT department.id, department.name FROM department JOIN role WHERE role.department_id = department.id;').catch(catchError))[0];
+                    result = (await db.query('SELECT department.id, department.name FROM department JOIN role ON role.department_id = department.id;').catch(catchError))[0];
                     result.forEach((department) => {
                         if(!department_names.includes(department.name)) {
                             department_ids.push(department.id);
@@ -153,10 +153,12 @@ async function viewRecords(department_count, role_count, employee_count) {
                 case 'View the total utilized budget of a department':
                     department_ids = [];
                     department_names = [];
-                    result = (await db.query('SELECT id, name FROM department;').catch(catchError))[0];
+                    result = (await db.query('SELECT department.id, department.name FROM department JOIN role ON department.id = role.department_id JOIN employee ON role.id = employee.role_id;').catch(catchError))[0];
                     result.forEach((department) => {
-                        department_ids.push(department.id);
-                        department_names.push(department.name);
+                        if(!department_names.includes(department.name)) {
+                            department_ids.push(department.id);
+                            department_names.push(department.name);
+                        }
                     });
 
                     question = {
@@ -169,7 +171,6 @@ async function viewRecords(department_count, role_count, employee_count) {
                     response = await inquirer.prompt(question);
                     department_id = department_ids[department_names.indexOf(response.department_name)];
 
-                    // query = 'SELECT department.name AS Name, SUM(role.salary) AS "Total Utilized Budget" FROM department JOIN role ON department.id = role.department_id JOIN employee ON role.id = employee.role_id GROUP BY Name;'
                     query = qm.viewBudget(department_id);
             }
 
