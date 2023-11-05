@@ -25,7 +25,7 @@ This application uses the mysql database program, which can be installed [here](
 
 ## Usage
 
-Once the application is installed and setup, the application can be started using the 'npm start' command in the command line. Once started, follow the command prompts in the application to view and manipulate the data as you please. Below are some screenshots of the application in use.<br><br>
+Once the application is installed and setup, the application can be started using the 'npm start' command in the command line. Once started, follow the command prompts in the application to view and manipulate the data as you please. Below are some screenshots of the application in use. Additionally, this [video](https://drive.google.com/file/d/1dk-Ff8xoqKUNHyl6beveAiGHCy2Nnays/view?usp=sharing) shows every feature of the program in action.<br><br>
 
 ![Landing Screen](./images/landing_screen.png)<br>
 
